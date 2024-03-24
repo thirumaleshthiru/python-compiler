@@ -7,3 +7,6 @@ matplotlib
 scikit-learn
 tensorflow
 requests
+seaborn
+beautifulsoup4
+scrapy
