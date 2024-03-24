@@ -36,6 +36,5 @@ def compile_run():
         return jsonify(result)
     else:
         return jsonify({'success': False, 'error': 'No code provided.'})
-
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=8080)
