@@ -3,3 +3,7 @@ Flask-CORS
 gunicorn
 numpy
 pandas
+matplotlib
+scikit-learn
+tensorflow
+requests
