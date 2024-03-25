@@ -11,11 +11,12 @@ def compile_and_run_python_code(code, input_data=None):
         # Redirect stdout and stdin
         sys.stdout = result_output = StringIO()
         if input_data:
+            # Overwrite input() function to read from input_data
             sys.stdin = StringIO(input_data)
 
         # Compile and execute the code
         compiled_output = compile(code, '<string>', 'exec')
-        exec(compiled_output)
+        exec(compiled_output, {}, {})  # Avoid polluting global namespace
 
         # Get the captured output
         output_text = result_output.getvalue()
@@ -32,7 +33,7 @@ def compile_and_run_python_code(code, input_data=None):
 def compile_run():
     data = request.json
     code = data.get('code')
-    input_data = data.get('input')  # assuming input is provided in the request
+    input_data = data.get('inputs')  # Corrected to 'inputs'
 
     if code:
         # Call the function to compile and run the provided Python code
