@@ -1,4 +1,4 @@
-import sys
+ import sys
 from io import StringIO
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -11,12 +11,11 @@ def compile_and_run_python_code(code, input_data=None):
         # Redirect stdout and stdin
         sys.stdout = result_output = StringIO()
         if input_data:
-            # Overwrite input() function to read from input_data
             sys.stdin = StringIO(input_data)
 
         # Compile and execute the code
         compiled_output = compile(code, '<string>', 'exec')
-        exec(compiled_output, {}, {})  # Avoid polluting global namespace
+        exec(compiled_output)
 
         # Get the captured output
         output_text = result_output.getvalue()
@@ -33,7 +32,7 @@ def compile_and_run_python_code(code, input_data=None):
 def compile_run():
     data = request.json
     code = data.get('code')
-    input_data = data.get('inputs')  # Corrected to 'inputs'
+    input_data = data.get('input')  # assuming input is provided in the request
 
     if code:
         # Call the function to compile and run the provided Python code
@@ -43,4 +42,4 @@ def compile_run():
         return jsonify({'success': False, 'error': 'No code provided.'})
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=8080)
+    app.run(debug=True, host='0.0.0.0', port=8080) 
