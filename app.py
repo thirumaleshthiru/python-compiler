@@ -1,35 +1,29 @@
 import sys
-from io import StringIO
+import queue
+import threading
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
-def compile_and_run_python_code(code, inputs=None):
+def run_code_with_input(code, input_queue, output_queue):
     try:
-        # Redirect stdout and stdin
+        # Redirect stdout
         sys.stdout = result_output = StringIO()
-        if inputs:
-            for key, value in inputs.items():
-                sys.stdin = StringIO(value)
-                # Assuming you're dealing with input prompts in the code itself
-                code = code.replace(f"input('{key}')", f"'{value}'")
 
         # Compile and execute the code
         compiled_output = compile(code, '<string>', 'exec')
-        exec(compiled_output)
-
-        # Get the captured output
-        output_text = result_output.getvalue()
-        return {'success': True, 'output': output_text}
+        exec(compiled_output, {'__builtins__': {'input': lambda prompt='': input_queue.get()}})
+        
+        # Put the captured output into the output queue
+        output_queue.put(result_output.getvalue())
     except Exception as e:
-        # If any error occurs during compilation or execution, return the error message
-        return {'success': False, 'error': str(e)}
+        # If any error occurs during compilation or execution, put the error message into the output queue
+        output_queue.put(str(e))
     finally:
-        # Reset stdout and stdin to their default values
+        # Reset stdout
         sys.stdout = sys.__stdout__
-        sys.stdin = sys.__stdin__
 
 @app.route('/compile-run', methods=['POST'])
 def compile_run():
@@ -38,8 +32,25 @@ def compile_run():
     inputs = data.get('inputs')
 
     if code:
-        result = compile_and_run_python_code(code, inputs)
-        return jsonify(result)
+        # Initialize input and output queues
+        input_queue = queue.Queue()
+        output_queue = queue.Queue()
+
+        # Start a thread to run the code
+        execution_thread = threading.Thread(target=run_code_with_input, args=(code, input_queue, output_queue))
+        execution_thread.start()
+
+        # Provide inputs to the input queue
+        if inputs:
+            for key, value in inputs.items():
+                input_queue.put(value)
+
+        # Wait for the execution thread to finish
+        execution_thread.join()
+
+        # Get the output from the output queue
+        output_text = output_queue.get()
+        return jsonify({'success': True, 'output': output_text})
     else:
         return jsonify({'success': False, 'error': 'No code provided.'})
 
