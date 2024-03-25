@@ -10,10 +10,15 @@ def compile_and_run_python_code(code, inputs=None):
     try:
         # Redirect stdout and stdin
         sys.stdout = result_output = StringIO()
+        if inputs:
+            for key, value in inputs.items():
+                sys.stdin = StringIO(value)
+                # Assuming you're dealing with input prompts in the code itself
+                code = code.replace(f"input('{key}')", f"'{value}'")
 
         # Compile and execute the code
         compiled_output = compile(code, '<string>', 'exec')
-        exec(compiled_output, {'__builtins__': {'input': lambda prompt='': inputs[prompt] if prompt in inputs else ''}})
+        exec(compiled_output)
 
         # Get the captured output
         output_text = result_output.getvalue()
