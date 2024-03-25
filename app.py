@@ -6,12 +6,15 @@ from flask_cors import CORS
 app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
-def compile_and_run_python_code(code, input_data=None):
+def compile_and_run_python_code(code, inputs=None):
     try:
         # Redirect stdout and stdin
         sys.stdout = result_output = StringIO()
-        if input_data:
-            sys.stdin = StringIO(input_data)
+        if inputs:
+            for key, value in inputs.items():
+                sys.stdin = StringIO(value)
+                # Assuming you're dealing with input prompts in the code itself
+                code = code.replace(f"input('{key}')", f"'{value}'")
 
         # Compile and execute the code
         compiled_output = compile(code, '<string>', 'exec')
@@ -32,14 +35,13 @@ def compile_and_run_python_code(code, input_data=None):
 def compile_run():
     data = request.json
     code = data.get('code')
-    input_data = data.get('input')  # assuming input is provided in the request
+    inputs = data.get('inputs')
 
     if code:
-        # Call the function to compile and run the provided Python code
-        result = compile_and_run_python_code(code, input_data)
+        result = compile_and_run_python_code(code, inputs)
         return jsonify(result)
     else:
         return jsonify({'success': False, 'error': 'No code provided.'})
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=8080) 
+    app.run(debug=True, host='0.0.0.0', port=8080)
