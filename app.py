@@ -10,11 +10,14 @@ def compile_and_run_python_code(code, inputs=None):
     try:
         # Redirect stdout and stdin
         sys.stdout = result_output = StringIO()
+        sys.stdin = StringIO()  # Create a StringIO object to simulate stdin
+
         if inputs:
-            for key, value in inputs.items():
-                sys.stdin = StringIO(value)
-                # Assuming you're dealing with input prompts in the code itself
-                code = code.replace(f"input('{key}')", f"'{value}'")
+            # Set up the simulated stdin for multiple inputs
+            input_values = inputs.values()
+            input_values.reverse()  # Reverse the input values to simulate FIFO order
+            sys.stdin.write('\n'.join(input_values))
+            sys.stdin.seek(0)  # Reset the position to the beginning of the simulated stdin
 
         # Compile and execute the code
         compiled_output = compile(code, '<string>', 'exec')
