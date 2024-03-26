@@ -8,16 +8,18 @@ CORS(app)  # Enable CORS for all routes
 
 def compile_and_run_python_code(code, inputs=None):
     try:
-        # Redirect stdout and stdin
+        # Redirect stdout
         sys.stdout = result_output = StringIO()
-        sys.stdin = StringIO()  # Create a StringIO object to simulate stdin
 
-        if inputs:
-            # Set up the simulated stdin for multiple inputs
-            input_values = inputs.values()
-            input_values.reverse()  # Reverse the input values to simulate FIFO order
-            sys.stdin.write('\n'.join(input_values))
-            sys.stdin.seek(0)  # Reset the position to the beginning of the simulated stdin
+        # Define a function to read inputs from a list
+        def custom_input(prompt):
+            if inputs and len(inputs) > 0:
+                return str(inputs.pop(0))
+            else:
+                return ''
+
+        # Replace input() calls with custom_input() calls
+        code = code.replace('input(', 'custom_input(')
 
         # Compile and execute the code
         compiled_output = compile(code, '<string>', 'exec')
@@ -30,9 +32,8 @@ def compile_and_run_python_code(code, inputs=None):
         # If any error occurs during compilation or execution, return the error message
         return {'success': False, 'error': str(e)}
     finally:
-        # Reset stdout and stdin to their default values
+        # Reset stdout to its default value
         sys.stdout = sys.__stdout__
-        sys.stdin = sys.__stdin__
 
 @app.route('/compile-run', methods=['POST'])
 def compile_run():
